@@ -103,9 +103,12 @@ func main() {
 	w.SetContent(container.NewVBox(statusLabel, addLabel, nameEntry, addressEntry, addButton, delLabel, delEntry, delButton, infoLabel))
 
 	go func() {
+		// Initial check before the ticker starts
 		check := CheckAll(Targets)
 		statusLabel.SetText(check)
 		for range ticker.C {
+			// Creating a goroutine to check the servers every 5 seconds 
+			// and update the label with the results
 			check = CheckAll(Targets)
 			fyne.Do(func() {
 				statusLabel.SetText(check)
