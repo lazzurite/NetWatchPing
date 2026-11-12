@@ -5,7 +5,7 @@
 * You can add or delete a server
 Automatically creates **targets.json** near the executable file
 
-### How to Download & Run (For Users):
+### How to Download & Run :
 
 **Windows**: Download NetWatchPing.exe from the [Releases] page and run it.
 
