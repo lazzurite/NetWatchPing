@@ -1,9 +1,12 @@
 ### NetWatchPing
 **NetWatchPing** is a cross-platform TCP server availability and latency monitor built in Go and Fyne
-<img width="2560" height="1600" alt="NWPWork" src="https://github.com/user-attachments/assets/b41531b8-2eab-4e59-bc95-e5b25661ea58" />
+<img width="1280" height="837" alt="5190552206279646794" src="https://github.com/user-attachments/assets/4e05d8c5-4e0b-4bf4-a659-944f34430597" />
+
 * It checks servers from **targets.json** every 5 seconds and prints the ping duration
 * You can add or delete a server
 Automatically creates **targets.json** near the executable file
+* *IP region check version* has *Region* column that shows the region of current server
+
 
 ### How to Download & Run :
 
