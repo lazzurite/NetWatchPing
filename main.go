@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"sort"
@@ -12,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/oschwald/geoip2-golang"
 )
 
 func LoadTargets(filename string) ([]Target, error) {
@@ -52,6 +54,10 @@ func main() {
 		Targets = loadedTargets
 	}
 	ticker := time.NewTicker(5 * time.Second)
+	db, err := geoip2.Open("GeoLite2-Country.mmdb")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	//Building a Fyne window
 	a := app.New()
@@ -103,10 +109,12 @@ func main() {
 	w.SetContent(container.NewVBox(statusLabel, addLabel, nameEntry, addressEntry, addButton, delLabel, delEntry, delButton, infoLabel))
 
 	go func() {
-		check := CheckAll(Targets)
+		// Initial check before the ticker starts
+		check := CheckAll(Targets, db)
 		statusLabel.SetText(check)
 		for range ticker.C {
-			check = CheckAll(Targets)
+			// Creating a goroutine to check the servers every 5 seconds and update the label with the results
+			check = CheckAll(Targets, db)
 			fyne.Do(func() {
 				statusLabel.SetText(check)
 			})
@@ -124,6 +132,7 @@ type CheckResult struct {
 	Target   Target
 	Duration time.Duration
 	Error    error
+	Region   string
 }
 
 func ConnectTCP(network, address string, timeout time.Duration) (time.Duration, error) {
@@ -141,15 +150,44 @@ func ConnectTCP(network, address string, timeout time.Duration) (time.Duration, 
 	return duration, nil
 }
 
-func CheckAll(Targets []Target) string {
+// Func for getting IP's region
+func GetCountry(db *geoip2.Reader, addr string) string {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+
+	ip, err := net.LookupIP(host)
+	if err != nil || len(ip) == 0 {
+		return err.Error()
+	}
+	check, err := db.Country(ip[0])
+	if err != nil {
+		return "Error when checking the IP in database"
+	}
+
+	return check.Country.IsoCode
+
+}
+
+type Site struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Country string `json:"country"` // <-- Add this single line to your existing struct
+}
+
+func CheckAll(Targets []Target, db *geoip2.Reader) string {
 	resultChan := make(chan CheckResult, len(Targets))
 	for _, target := range Targets {
 		go func(t Target) {
 			duration, err := ConnectTCP("tcp", t.Address, 5*time.Second)
+
+			region := GetCountry(db, t.Address)
 			resultChan <- CheckResult{
 				Target:   t,
 				Duration: duration,
 				Error:    err,
+				Region:   region,
 			}
 		}(target)
 	}
@@ -165,13 +203,13 @@ func CheckAll(Targets []Target) string {
 	var output string
 	// Put the output into a string so Fyne can display it in a label
 	output += fmt.Sprintf("Last check at: %s\n", time.Now().Format("15:04:05"))
-	output += fmt.Sprintf("%-20s %-30s %-10s %-10s\n", "Name", "Address", "Status", "Duration")
+	output += fmt.Sprintf("%-20s %-30s %-10s %-8s %-10s\n", "Name", "Address", "Status", "Region", "Duration")
 	output += fmt.Sprintf("---------------------------------------------------------------------------------------------\n")
 	for _, result := range results {
 		if result.Error != nil {
-			output += fmt.Sprintf("%-20s %-30s %-10s %-10s\n", result.Target.Name, result.Target.Address, "Offline", result.Error)
+			output += fmt.Sprintf("%-20s %-30s %-10s %-8s %-10s\n", result.Target.Name, result.Target.Address, "Offline", result.Region, result.Error)
 		} else {
-			output += fmt.Sprintf("%-20s %-30s %-10s %-10s\n", result.Target.Name, result.Target.Address, "Online", result.Duration.Round(time.Millisecond))
+			output += fmt.Sprintf("%-20s %-30s %-10s %-8s %-10s\n", result.Target.Name, result.Target.Address, "Online", result.Region, result.Duration.Round(time.Millisecond))
 		}
 	}
 	output += fmt.Sprintf("---------------------------------------------------------------------------------------------\n")
