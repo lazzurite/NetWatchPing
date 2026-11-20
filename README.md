@@ -5,7 +5,7 @@
 * It checks servers from **targets.json** every 5 seconds and prints the ping duration
 * You can add or delete a server
 Automatically creates **targets.json** near the executable file
-* **IP region check version** has **Region** column that shows the region of current server
+* **GeoIP version** has **Region** column that shows the region of current server
 
 
 ### How to Download & Run :
