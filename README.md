@@ -10,9 +10,9 @@ Automatically creates **targets.json** near the executable file
 
 ### How to Download & Run :
 
-**Windows**: Download NetWatchPing.exe from the [Releases] page and run it.
+**Windows**: Download NetWatchPing.exe from the [Releases](../../releases) page and run it.
 
-**Linux**: Download NetWatchPing-linux from the [Releases] page, run chmod +x NetWatchPing-linux, and launch it (./NetWatchPing-linux).
+**Linux**: Download NetWatchPing-linux from the [Releases](../../releases) page, run `chmod +x NetWatchPing-linux`, and launch it (`./NetWatchPing-linux`).
 
 ### Why TCP instead of ICMP ?
 * Many game servers (like Epic Games) block ICMP echo requests to mitigate DDoS, whereas TCP port checks test the actual service port.
